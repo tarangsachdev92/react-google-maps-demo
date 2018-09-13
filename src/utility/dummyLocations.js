@@ -53,20 +53,15 @@ const directions = [
     strokeColor: "#f68f54"
   }
 ];
-const DummyLocations = directions
-  // .filter((elm, index) => {
-  //   // return true;
-  //   return index > 15 && index < 26;
-  // })
-  .map(elem => {
-    return createLocationObject(
-      elem.from.latLng,
-      elem.from.title,
-      elem.to.latLng,
-      elem.to.title,
-      elem.strokeColor
-    );
-  });
+const DummyLocations = directions.map(elem => {
+  return createLocationObject(
+    elem.from.latLng,
+    elem.from.title,
+    elem.to.latLng,
+    elem.to.title,
+    elem.strokeColor
+  );
+});
 
 export default DummyLocations;
 

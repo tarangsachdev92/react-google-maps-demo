@@ -1,8 +1,9 @@
 import React, { Component } from "react";
-import { convertLatLngToObj } from "../../utility/helper";
+import heartIcon from "../images/heart-icon.png";
+import { convertLatLngToObj } from "../utility/helper";
 const { Marker, DirectionsRenderer } = require("react-google-maps");
 
-class DirectionRenderComponent extends Component {
+class DirectionRenderComponentAsync extends Component {
   state = {
     directions: null,
     wayPoints: null,
@@ -10,75 +11,87 @@ class DirectionRenderComponent extends Component {
   };
   delayFactor = 0;
 
+  testFun = (startLoc, destinationLoc, wayPoints) =>
+    this.getDirections(startLoc, destinationLoc, wayPoints).then(response => {
+      if (response.status === window.google.maps.DirectionsStatus.OK) {
+        const wayPts = response.result.routes[0].overview_path.filter(
+          (elem, index) => {
+            return index % 10 === 0;
+          }
+        );
+        this.setState({
+          directions: response.result,
+          wayPoints: wayPts
+        });
+        this.setCurrentLocation(wayPts);
+      } else if (
+        response.status === window.google.maps.DirectionsStatus.OVER_QUERY_LIMIT
+      ) {
+        this.delayFactor += 0.2;
+        if (this.delayFactor === 15) {
+          this.delayFactor = 0.2;
+        }
+        setTimeout(() => {
+          this.testFun(startLoc, destinationLoc, response.wayPoints);
+        }, this.delayFactor * 200);
+      } else {
+        console.error(`error fetching directions ${response.result}`);
+      }
+    });
+
   componentDidMount() {
+    // find your origin and destination point coordinates and pass it to our method.
+    // I am using Bursa,TR -> Istanbul,TR for this example
     const startLoc = this.props.from.lat + ", " + this.props.from.lng;
     const destinationLoc = this.props.to.lat + ", " + this.props.to.lng;
-    this.getDirections(startLoc, destinationLoc);
-    this.setCurrentLocation();
+    this.testFun(startLoc, destinationLoc, []);
   }
 
   async getDirections(startLoc, destinationLoc, wayPoints = []) {
-    const waypts = [];
-    if (wayPoints.length > 0) {
-      waypts.push({
-        location: new window.google.maps.LatLng(
-          wayPoints[0].lat,
-          wayPoints[0].lng
-        ),
-        stopover: true
-      });
-    }
-    const directionService = new window.google.maps.DirectionsService();
-    directionService.route(
-      {
-        origin: startLoc,
-        destination: destinationLoc,
-        waypoints: waypts,
-        optimizeWaypoints: true,
-        travelMode: window.google.maps.TravelMode.DRIVING
-      },
-      (result, status) => {
-        // console.log("status", status);
-        if (status === window.google.maps.DirectionsStatus.OK) {
-          this.setState({
-            directions: result,
-            wayPoints: result.routes[0].overview_path.filter((elem, index) => {
-              return index % 30 === 0;
-            })
-          });
-        } else if (
-          status === window.google.maps.DirectionsStatus.OVER_QUERY_LIMIT
-        ) {
-          this.delayFactor += 0.2;
-          // if (this.delayFactor <= 10) this.delayFactor = 0.2;
-          setTimeout(() => {
-            this.getDirections(startLoc, destinationLoc, wayPoints);
-          }, this.delayFactor * 200);
-        } else {
-          console.error(`error fetching directions ${result}`);
-        }
+    return new Promise((resolve, reject) => {
+      const waypts = [];
+      if (wayPoints.length > 0) {
+        waypts.push({
+          location: new window.google.maps.LatLng(
+            wayPoints[0].lat,
+            wayPoints[0].lng
+          ),
+          stopover: true
+        });
       }
-    );
+      const DirectionsService = new window.google.maps.DirectionsService();
+      DirectionsService.route(
+        {
+          origin: startLoc,
+          destination: destinationLoc,
+          waypoints: waypts,
+          optimizeWaypoints: true,
+          travelMode: window.google.maps.TravelMode.DRIVING
+        },
+        (result, status) => {
+          resolve({ status, result, wayPoints });
+        }
+      );
+    });
   }
 
-  setCurrentLocation = () => {
+  setCurrentLocation = wayPoints => {
     let count = 0;
     let refreshIntervalId = setInterval(() => {
-      const locations = this.state.wayPoints;
-      if (locations) {
-        if (count <= locations.length - 1) {
+      // console.log("wayPoints:", wayPoints);
+      if (wayPoints) {
+        if (count <= wayPoints.length - 1) {
           const currentLocation = convertLatLngToObj(
-            locations[count].lat(),
-            locations[count].lng()
+            wayPoints[count].lat(),
+            wayPoints[count].lng()
           );
           this.setState({ currentLocation });
-
           const wayPts = [];
           wayPts.push(currentLocation);
           const startLoc = this.props.from.lat + ", " + this.props.from.lng;
           const destinationLoc = this.props.to.lat + ", " + this.props.to.lng;
           this.delayFactor = 0;
-          this.getDirections(startLoc, destinationLoc, wayPts);
+          this.testFun(startLoc, destinationLoc, wayPts);
           count++;
         } else {
           clearInterval(refreshIntervalId);
@@ -117,7 +130,7 @@ class DirectionRenderComponent extends Component {
         {destinationMarker}
         {this.state.currentLocation && (
           <Marker
-            label={this.props.index.toString()}
+            defaultIcon={heartIcon}
             position={{
               lat: this.state.currentLocation.lat,
               lng: this.state.currentLocation.lng
@@ -144,4 +157,4 @@ class DirectionRenderComponent extends Component {
   }
 }
 
-export default DirectionRenderComponent;
+export default DirectionRenderComponentAsync;

@@ -5,17 +5,14 @@ import { G_API_URL } from "../../utility/constants";
 import DummyLocations from "../../utility/dummyLocations";
 const { withScriptjs, withGoogleMap, GoogleMap } = require("react-google-maps");
 class Directions extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      defaultZoom: 5,
-      map: null,
-      center: {
-        lat: 23.217724,
-        lng: 72.667216
-      }
-    };
-  }
+  state = {
+    defaultZoom: 5,
+    map: null,
+    center: {
+      lat: 23.217724,
+      lng: 72.667216
+    }
+  };
   render() {
     return (
       <GoogleMap
