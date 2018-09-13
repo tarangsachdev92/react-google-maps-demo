@@ -5,6 +5,14 @@ const convertLatLngToObj = (lat, lng) => {
   };
 };
 
+const createLatLngObject = latLng => {
+  const latLngArray = latLng.split(",");
+  return {
+    lat: latLngArray[0],
+    lng: latLngArray[1]
+  };
+};
+
 const createLocationObject = (
   from,
   fromTitle,
@@ -19,11 +27,4 @@ const createLocationObject = (
   };
 };
 
-const createLatLngObject = latLng => {
-  const latLngArray = latLng.split(",");
-  return {
-    lat: latLngArray[0],
-    lng: latLngArray[1]
-  };
-};
 export { convertLatLngToObj, createLocationObject, createLatLngObject };

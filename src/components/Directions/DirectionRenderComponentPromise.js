@@ -11,7 +11,7 @@ class DirectionRenderComponentAsync extends Component {
   };
   delayFactor = 0;
 
-  testFun = (startLoc, destinationLoc, wayPoints) =>
+  getDirectionsPromise = (startLoc, destinationLoc, wayPoints) =>
     this.getDirections(startLoc, destinationLoc, wayPoints).then(response => {
       if (response.status === window.google.maps.DirectionsStatus.OK) {
         const wayPts = response.result.routes[0].overview_path.filter(
@@ -32,7 +32,11 @@ class DirectionRenderComponentAsync extends Component {
           this.delayFactor = 0.2;
         }
         setTimeout(() => {
-          this.testFun(startLoc, destinationLoc, response.wayPoints);
+          this.getDirectionsPromise(
+            startLoc,
+            destinationLoc,
+            response.wayPoints
+          );
         }, this.delayFactor * 200);
       } else {
         console.error(`error fetching directions ${response.result}`);
@@ -40,11 +44,9 @@ class DirectionRenderComponentAsync extends Component {
     });
 
   componentDidMount() {
-    // find your origin and destination point coordinates and pass it to our method.
-    // I am using Bursa,TR -> Istanbul,TR for this example
-    const startLoc = this.props.from.lat + ", " + this.props.from.lng;
-    const destinationLoc = this.props.to.lat + ", " + this.props.to.lng;
-    this.testFun(startLoc, destinationLoc, []);
+    const startLoc = `${this.props.from.lat}, ${this.props.from.lng}`;
+    const destinationLoc = `${this.props.to.lat}, ${this.props.to.lng}`;
+    this.getDirectionsPromise(startLoc, destinationLoc, []);
   }
 
   async getDirections(startLoc, destinationLoc, wayPoints = []) {
@@ -91,7 +93,7 @@ class DirectionRenderComponentAsync extends Component {
           const startLoc = this.props.from.lat + ", " + this.props.from.lng;
           const destinationLoc = this.props.to.lat + ", " + this.props.to.lng;
           this.delayFactor = 0;
-          this.testFun(startLoc, destinationLoc, wayPts);
+          this.getDirectionsPromise(startLoc, destinationLoc, wayPts);
           count++;
         } else {
           clearInterval(refreshIntervalId);
